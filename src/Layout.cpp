@@ -24,16 +24,21 @@ void CHyprspaceWidget::updateLayout() {
     // Geneva Convention violation type hack but idc atm
     if (active) {
         const auto oActiveWorkspace = pMonitor->m_activeWorkspace;
+        
+        // Safety check: ensure active workspace is valid
+        if (!oActiveWorkspace) return;
 
         for (auto& ws : g_pCompositor->getWorkspaces()) { // HACK: recalculate other workspaces without reserved area
-            if (ws->m_monitor->m_id == ownerID && ws->m_id != oActiveWorkspace->m_id) {
+            if (ws && ws->m_monitor && ws->m_monitor->m_id == ownerID && ws->m_id != oActiveWorkspace->m_id) {
                 pMonitor->m_activeWorkspace = ws.lock();
                 const auto curRules = std::to_string(pMonitor->activeWorkspaceID()) + ", gapsin:" + PGAPSIN->toString() + ", gapsout:" + PGAPSOUT->toString();
                 if (Config::overrideGaps) g_pConfigManager->handleWorkspaceRules("", curRules);
                 g_pLayoutManager->getCurrentLayout()->recalculateMonitor(ownerID);
             }
         }
-        pMonitor->m_activeWorkspace = oActiveWorkspace;
+        // Restore original active workspace safely
+        if (oActiveWorkspace)
+            pMonitor->m_activeWorkspace = oActiveWorkspace;
         if (!Config::onBottom)
             pMonitor->m_reservedTopLeft.y = currentHeight;
         else
@@ -45,7 +50,7 @@ void CHyprspaceWidget::updateLayout() {
     }
     else {
         for (auto& ws : g_pCompositor->getWorkspaces()) {
-            if (ws->m_monitor->m_id == ownerID) {
+            if (ws && ws->m_monitor && ws->m_monitor->m_id == ownerID) {
                 const auto curRules = std::to_string(ws->m_id) + ", gapsin:" + PGAPSIN->toString() + ", gapsout:" + PGAPSOUT->toString();
                 if (Config::overrideGaps) g_pConfigManager->handleWorkspaceRules("", curRules);
                 g_pLayoutManager->getCurrentLayout()->recalculateMonitor(ownerID);

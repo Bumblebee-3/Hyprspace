@@ -89,12 +89,16 @@ bool CHyprspaceWidget::axisEvent(double delta, Vector2D coords) {
     else {
         if (delta < 0) {
             SWorkspaceIDName wsIDName = getWorkspaceIDNameFromString("r-1");
-            if (g_pCompositor->getWorkspaceByID(wsIDName.id) == nullptr) g_pCompositor->createNewWorkspace(wsIDName.id, ownerID);
+            if (g_pCompositor->getWorkspaceByID(wsIDName.id) == nullptr) {
+                [[maybe_unused]] auto ws = g_pCompositor->createNewWorkspace(wsIDName.id, ownerID);
+            }
             getOwner()->changeWorkspace(wsIDName.id);
         }
         else {
             SWorkspaceIDName wsIDName = getWorkspaceIDNameFromString("r+1");
-            if (g_pCompositor->getWorkspaceByID(wsIDName.id) == nullptr) g_pCompositor->createNewWorkspace(wsIDName.id, ownerID);
+            if (g_pCompositor->getWorkspaceByID(wsIDName.id) == nullptr) {
+                [[maybe_unused]] auto ws = g_pCompositor->createNewWorkspace(wsIDName.id, ownerID);
+            }
             getOwner()->changeWorkspace(wsIDName.id);
         }
     }

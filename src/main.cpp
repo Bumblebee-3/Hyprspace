@@ -52,21 +52,17 @@ bool Config::reverseSwipe = false;
 bool Config::disableBlur = false;
 
 float Config::overrideAnimSpeed = 0;
-
 bool Config::enableFocusedWindowPlaceholder = true;
 CHyprColor Config::focusedWindowPlaceholderColor = CHyprColor(0.3f, 0.3f, 0.3f, 0.5f);
 CHyprColor Config::focusedWindowPlaceholderBorderColor = CHyprColor(0.8f, 0.8f, 0.8f, 0.8f);
 float Config::focusedWindowPlaceholderAlpha = 0.5;
 
 bool Config::showFocusedWindowContent = false;
-
 float Config::dragAlpha = 0.2;
-
 
 // Texture capture system globals
 std::unordered_map<PHLWINDOW, CachedWindowTexture> g_windowTextureCache;
 bool g_enableTextureCapture = false;
-
 int numWorkspaces = -1; //hyprsplit/split-monitor-workspaces support
 
 Hyprutils::Memory::CSharedPointer<HOOK_CALLBACK_FN> g_pRenderHook;
@@ -154,11 +150,9 @@ void onRender(void* thisptr, SCallbackInfo& info, std::any args) {
                 if (g_oAlpha != -1) {
                     if (const auto curWindow = g_pInputManager->m_currentlyDraggedWindow.lock()) {
                         curWindow->m_activeInactiveAlpha->setValueAndWarp(Config::dragAlpha);
-                        curWindow->m_windowData.noBlur = CWindowOverridableVar<bool>(true, eOverridePriority::PRIORITY_SET_PROP);
                         timespec time;
                         clock_gettime(CLOCK_MONOTONIC, &time);
                         (*(tRenderWindow)pRenderWindow)(g_pHyprRenderer.get(), curWindow, widget->getOwner(), &time, true, RENDER_PASS_MAIN, false, false);
-                        curWindow->m_windowData.noBlur.unset(eOverridePriority::PRIORITY_SET_PROP);
                         curWindow->m_activeInactiveAlpha->setValueAndWarp(g_oAlpha);
                     }
                 }
@@ -441,7 +435,7 @@ void reloadConfig() {
     Config::disableBlur = std::any_cast<Hyprlang::INT>(HyprlandAPI::getConfigValue(pHandle, "plugin:overview:disableBlur")->getValue());
 
     Config::overrideAnimSpeed = std::any_cast<Hyprlang::FLOAT>(HyprlandAPI::getConfigValue(pHandle, "plugin:overview:overrideAnimSpeed")->getValue());
-
+    
     // We don't need to store exitKey in Config namespace as it's only used in onKeyPress
 
     for (auto& widget : g_overviewWidgets) {
@@ -524,9 +518,9 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE inHandle) {
     g_pConfigReloadHook = HyprlandAPI::registerCallbackDynamic(pHandle, "configReloaded", [&] (void* thisptr, SCallbackInfo& info, std::any data) { reloadConfig(); });
     HyprlandAPI::reloadConfig();
 
-    HyprlandAPI::addDispatcher(pHandle, "overview:toggle", ::dispatchToggleOverview);
-    HyprlandAPI::addDispatcher(pHandle, "overview:open", ::dispatchOpenOverview);
-    HyprlandAPI::addDispatcher(pHandle, "overview:close", ::dispatchCloseOverview);
+    HyprlandAPI::addDispatcherV2(pHandle, "overview:toggle", ::dispatchToggleOverview);
+    HyprlandAPI::addDispatcherV2(pHandle, "overview:open", ::dispatchOpenOverview);
+    HyprlandAPI::addDispatcherV2(pHandle, "overview:close", ::dispatchCloseOverview);
 
     g_pRenderHook = HyprlandAPI::registerCallbackDynamic(pHandle, "render", onRender);
 

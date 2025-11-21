@@ -51,12 +51,16 @@ void CHyprspaceWidget::show() {
     // FIXME: ensure input is disabled for hidden layers
     if (oLayerAlpha.empty() && Config::hideRealLayers) {
         for (auto& ls : owner->m_layerSurfaceLayers[2]) {
+            // Validate layer surface before modifying (Hyprland 0.52 safety)
+            if (!ls || ls->m_readyToDelete || !ls->m_mapped) continue;
             //ls->startAnimation(false);
             oLayerAlpha.emplace_back(std::make_tuple(ls.lock(), ls->m_alpha->goal()));
             *ls->m_alpha = 0.f;
             ls->m_fadingOut = true;
         }
         for (auto& ls : owner->m_layerSurfaceLayers[3]) {
+            // Validate layer surface before modifying (Hyprland 0.52 safety)
+            if (!ls || ls->m_readyToDelete || !ls->m_mapped) continue;
             //ls->startAnimation(false);
             oLayerAlpha.emplace_back(std::make_tuple(ls.lock(), ls->m_alpha->goal()));
             *ls->m_alpha = 0.f;
@@ -81,10 +85,16 @@ void CHyprspaceWidget::hide() {
     auto owner = getOwner();
     if (!owner) return;
 
-    // restore layer state
+    active = false;
+
+    // restore layer state - check validity before accessing
     for (auto& ls : owner->m_layerSurfaceLayers[2]) {
-        if (!ls->m_readyToDelete && ls->m_mapped && ls->m_fadingOut) {
-            auto oAlpha = std::find_if(oLayerAlpha.begin(), oLayerAlpha.end(), [&] (const auto& tuple) {return std::get<0>(tuple) == ls;});
+        // Additional validation for Hyprland 0.52
+        if (!ls || (!ls->m_readyToDelete && ls->m_mapped && ls->m_fadingOut)) {
+            auto oAlpha = std::find_if(oLayerAlpha.begin(), oLayerAlpha.end(), [&] (const auto& tuple) {
+                auto stored = std::get<0>(tuple);
+                return stored && stored == ls;
+            });
             if (oAlpha != oLayerAlpha.end()) {
                 ls->m_fadingOut = false;
                 *ls->m_alpha = std::get<1>(*oAlpha);
@@ -93,8 +103,12 @@ void CHyprspaceWidget::hide() {
         }
     }
     for (auto& ls : owner->m_layerSurfaceLayers[3]) {
-        if (!ls->m_readyToDelete && ls->m_mapped && ls->m_fadingOut) {
-            auto oAlpha = std::find_if(oLayerAlpha.begin(), oLayerAlpha.end(), [&] (const auto& tuple) {return std::get<0>(tuple) == ls;});
+        // Additional validation for Hyprland 0.52
+        if (!ls || (!ls->m_readyToDelete && ls->m_mapped && ls->m_fadingOut)) {
+            auto oAlpha = std::find_if(oLayerAlpha.begin(), oLayerAlpha.end(), [&] (const auto& tuple) {
+                auto stored = std::get<0>(tuple);
+                return stored && stored == ls;
+            });
             if (oAlpha != oLayerAlpha.end()) {
                 ls->m_fadingOut = false;
                 *ls->m_alpha = std::get<1>(*oAlpha);
@@ -104,16 +118,16 @@ void CHyprspaceWidget::hide() {
     }
     oLayerAlpha.clear();
 
-    // restore fullscreen state
+    // restore fullscreen state - check window validity
     for (auto& fs : prevFullscreen) {
         const auto w = g_pCompositor->getWindowFromHandle(std::get<0>(fs));
-        const auto oFullscreenMode = std::get<1>(fs);
-        g_pCompositor->setWindowFullscreenState(w, SFullscreenState(oFullscreenMode)); 
-        if (oFullscreenMode == FSMODE_FULLSCREEN) w->m_wantsInitialFullscreen = false;
+        if (w && w->m_workspace && w->m_workspace->m_monitor) {
+            const auto oFullscreenMode = std::get<1>(fs);
+            g_pCompositor->setWindowFullscreenState(w, SFullscreenState(oFullscreenMode)); 
+            if (oFullscreenMode == FSMODE_FULLSCREEN) w->m_wantsInitialFullscreen = false;
+        }
     }
     prevFullscreen.clear();
-
-    active = false;
 
     // panel offset should be handled by swipe event when swiping
     if (!swiping) {
