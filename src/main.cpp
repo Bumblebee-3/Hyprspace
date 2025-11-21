@@ -60,6 +60,12 @@ float Config::focusedWindowPlaceholderAlpha = 0.5;
 bool Config::showFocusedWindowContent = false;
 float Config::dragAlpha = 0.2;
 
+// New feature defaults
+int Config::roundedCorners = 12;
+bool Config::showWorkspaceTitles = true;
+bool Config::showNewWorkspaceIcon = true;
+bool Config::scrollToSwitch = true;
+
 // Texture capture system globals
 std::unordered_map<PHLWINDOW, CachedWindowTexture> g_windowTextureCache;
 bool g_enableTextureCapture = false;
@@ -205,8 +211,8 @@ void onMouseAxis(void* thisptr, SCallbackInfo& info, std::any args) {
         const auto widget = getWidgetForMonitor(pMonitor);
         if (widget) {
             if (widget->isActive()) {
-                if (e.source == WL_POINTER_AXIS_SOURCE_WHEEL)
-                    info.cancelled = !widget->axisEvent(e.delta, g_pInputManager->getMouseCoordsInternal());
+                // allow all axis sources (wheel, finger, continuous)
+                info.cancelled = !widget->axisEvent(e.delta, g_pInputManager->getMouseCoordsInternal());
             }
         }
     }
@@ -448,6 +454,16 @@ void reloadConfig() {
 
     Config::dragAlpha = std::any_cast<Hyprlang::FLOAT>(HyprlandAPI::getConfigValue(pHandle, "plugin:overview:dragAlpha")->getValue());
 
+    // New configs
+    if (auto cv = HyprlandAPI::getConfigValue(pHandle, "plugin:overview:roundedCorners"))
+        Config::roundedCorners = std::any_cast<Hyprlang::INT>(cv->getValue());
+    if (auto cv = HyprlandAPI::getConfigValue(pHandle, "plugin:overview:showWorkspaceTitles"))
+        Config::showWorkspaceTitles = std::any_cast<Hyprlang::INT>(cv->getValue());
+    if (auto cv = HyprlandAPI::getConfigValue(pHandle, "plugin:overview:showNewWorkspaceIcon"))
+        Config::showNewWorkspaceIcon = std::any_cast<Hyprlang::INT>(cv->getValue());
+    if (auto cv = HyprlandAPI::getConfigValue(pHandle, "plugin:overview:scrollToSwitch"))
+        Config::scrollToSwitch = std::any_cast<Hyprlang::INT>(cv->getValue());
+
     // get number of workspaces from hyprsplit or split-monitor-workspaces plugin config
     Hyprlang::CConfigValue* numWorkspacesConfig = HyprlandAPI::getConfigValue(pHandle, "plugin:hyprsplit:num_workspaces");
     if (!numWorkspacesConfig)
@@ -514,6 +530,12 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE inHandle) {
     HyprlandAPI::addConfigValue(pHandle, "plugin:overview:overrideAnimSpeed", Hyprlang::FLOAT{0.0});
     HyprlandAPI::addConfigValue(pHandle, "plugin:overview:dragAlpha", Hyprlang::FLOAT{0.2});
     HyprlandAPI::addConfigValue(pHandle, "plugin:overview:exitKey", Hyprlang::STRING{"Escape"});
+
+    // New config values
+    HyprlandAPI::addConfigValue(pHandle, "plugin:overview:roundedCorners", Hyprlang::INT{12});
+    HyprlandAPI::addConfigValue(pHandle, "plugin:overview:showWorkspaceTitles", Hyprlang::INT{1});
+    HyprlandAPI::addConfigValue(pHandle, "plugin:overview:showNewWorkspaceIcon", Hyprlang::INT{1});
+    HyprlandAPI::addConfigValue(pHandle, "plugin:overview:scrollToSwitch", Hyprlang::INT{1});
 
     g_pConfigReloadHook = HyprlandAPI::registerCallbackDynamic(pHandle, "configReloaded", [&] (void* thisptr, SCallbackInfo& info, std::any data) { reloadConfig(); });
     HyprlandAPI::reloadConfig();

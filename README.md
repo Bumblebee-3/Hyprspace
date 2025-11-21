@@ -137,6 +137,7 @@ Refer to the [Hyprland wiki](https://wiki.hyprland.org/Nix/Hyprland-on-Home-Mana
 - `plugin:overview:reservedArea` padding on top of the panel, for Macbook camera notch
 - `plugin:overview:workspaceBorderSize`
 - `plugin:overview:centerAligned` whether if workspaces should be aligned at the center (KDE / macOS style) or at the left (Windows style)
+- `plugin:overview:roundedCorners` corner radius (in px) for panel and workspace previews
 - `plugin:overview:hideBackgroundLayers` do not draw background and bottom layers in overview
 - `plugin:overview:hideTopLayers` do not draw top layers in overview
 - `plugin:overview:hideOverlayLayers` do not draw overlay layers in overview
@@ -160,6 +161,9 @@ Refer to the [Hyprland wiki](https://wiki.hyprland.org/Nix/Hyprland-on-Home-Mana
 - `plugin:overview:showNewWorkspace` add a new empty workspace at the end of workspaces view
 - `plugin:overview:showEmptyWorkspace` show empty workspaces that are inbetween non-empty workspaces
 - `plugin:overview:showSpecialWorkspace` defaults to false
+- `plugin:overview:showWorkspaceTitles` render workspace title (workspace id + focused window class:title or (empty))
+- `plugin:overview:showNewWorkspaceIcon` draw a plus (+) icon on the new empty workspace placeholder
+- `plugin:overview:scrollToSwitch` scrolling on the panel switches active workspace instead of panning workspace list
 - `plugin:overview:disableGestures`
 - `plugin:overview:reverseSwipe` reverses the direction of swipe gesture, for macOS peeps?
 - `plugin:overview:exitKey` key used to exit overview mode (default: Escape). Leave empty to disable keyboard exit.

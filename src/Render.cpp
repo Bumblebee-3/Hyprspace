@@ -1,5 +1,26 @@
 #include "Overview.hpp"
 #include "Globals.hpp"
+// Removed text pass elements; we'll draw text & icons directly via rect pass elements.
+// Workspace title helper (previously in Text.cpp)
+static std::string buildWorkspaceTitle(int wsID) {
+    auto ws = g_pCompositor->getWorkspaceByID(wsID);
+    if (!ws) return std::to_string(wsID);
+    std::string focusedTitle;
+    if (auto fw = ws->getLastFocusedWindow()) {
+        focusedTitle = fw->m_class + ":" + fw->m_title;
+    }
+    if (focusedTitle.empty()) {
+        for (auto& w : g_pCompositor->m_windows) {
+            if (!w || !w->m_isMapped || w->isHidden()) continue;
+            if (w->m_workspace == ws) {
+                focusedTitle = w->m_class + ":" + w->m_title;
+                break;
+            }
+        }
+    }
+    if (focusedTitle.empty()) focusedTitle = "(empty)";
+    return std::to_string(wsID) + " " + focusedTitle;
+}
 #include "src/helpers/memory/Memory.hpp"
 #include <hyprland/src/render/pass/RectPassElement.hpp>
 #include <hyprland/src/render/pass/BorderPassElement.hpp>
@@ -43,6 +64,7 @@ void renderRect(CBox box, CHyprColor color) {
     CRectPassElement::SRectData rectdata;
     rectdata.color = color;
     rectdata.box = box;
+    rectdata.round = Config::roundedCorners; // apply rounding
     g_pHyprRenderer->m_renderPass.add(makeUnique<CRectPassElement>(rectdata));
 }
 
@@ -51,6 +73,7 @@ void renderRectWithBlur(CBox box, CHyprColor color) {
     rectdata.color = color;
     rectdata.box = box;
     rectdata.blur = true;
+    rectdata.round = Config::roundedCorners; // apply rounding
     g_pHyprRenderer->m_renderPass.add(makeUnique<CRectPassElement>(rectdata));
 }
 
@@ -58,10 +81,48 @@ void renderBorder(CBox box, CGradientValueData gradient, int size) {
     CBorderPassElement::SBorderData data;
     data.box = box;
     data.grad1 = gradient;
-    data.round = 0;
+    data.round = Config::roundedCorners; // rounded border
     data.a = 1.f;
     data.borderSize = size;
     g_pHyprRenderer->m_renderPass.add(makeUnique<CBorderPassElement>(data));
+}
+
+// --- Simple Monospace Text Drawing (placeholder) ---
+// Renders each character as a small filled rectangle to avoid dependency on GL immediate mode or external font libs.
+// This is intentionally minimal; replace with proper Pango/Cairo text if richer text is needed.
+static void drawMonospaceText(const std::string& text, Vector2D start, CHyprColor color, float scale = 1.f) {
+    const double glyphW = 8.0 * scale;
+    const double glyphH = 12.0 * scale;
+    double cx = start.x;
+    double cy = start.y;
+    for (size_t i = 0; i < text.size(); ++i) {
+        char c = text[i];
+        if (c == '\n') { cy += glyphH; cx = start.x; continue; }
+        if (c == ' ') { cx += glyphW + scale; continue; }
+        CRectPassElement::SRectData rd;
+        rd.box = CBox{cx, cy, glyphW - 1.0, glyphH - 2.0};
+        rd.color = color;
+        g_pHyprRenderer->m_renderPass.add(makeUnique<CRectPassElement>(rd));
+        cx += glyphW + scale;
+    }
+}
+
+static void drawPlusIcon(const CBox& box, CHyprColor color) {
+    double cx = box.x + box.w / 2.0;
+    double cy = box.y + box.h / 2.0;
+    double len = std::min(box.w, box.h) * 0.25;
+    double thickness = std::clamp(box.w * 0.03, 2.0, 4.0);
+
+    // horizontal bar
+    CRectPassElement::SRectData h;
+    h.box = CBox{cx - len, cy - thickness / 2.0, len * 2.0, thickness};
+    h.color = color;
+    g_pHyprRenderer->m_renderPass.add(makeUnique<CRectPassElement>(h));
+    // vertical bar
+    CRectPassElement::SRectData v;
+    v.box = CBox{cx - thickness / 2.0, cy - len, thickness, len * 2.0};
+    v.color = color;
+    g_pHyprRenderer->m_renderPass.add(makeUnique<CRectPassElement>(v));
 }
 
 void renderWindowStub(PHLWINDOW pWindow, PHLMONITOR pMonitor, CBox rectOverride, timespec* time) {
@@ -468,6 +529,21 @@ void CHyprspaceWidget::draw() {
         workspaceBoxes.emplace_back(std::make_tuple(wsID, curWorkspaceBox));
 
         // set the current position to the next workspace box
+        // Render workspace title if enabled (render after contents for overlay clarity)
+        if (Config::showWorkspaceTitles) {
+            std::string title = buildWorkspaceTitle(wsID);
+            CHyprColor textColor = (ws && ws == owner->m_activeWorkspace) ? Config::workspaceActiveBorder : Config::workspaceInactiveBorder;
+            // fallback if color fully transparent
+            if (textColor.a < 0.05f) textColor = Config::workspaceActiveBorder.a > 0.05f ? Config::workspaceActiveBorder : Config::panelBorderColor;
+            drawMonospaceText(title, {curWorkspaceRectOffsetX + 8.0, curWorkspaceRectOffsetY + 8.0}, textColor, 1.f);
+        }
+
+        if (Config::showNewWorkspaceIcon && ws == nullptr && wsID == workspaces.back()) {
+            CHyprColor iconColor = Config::workspaceInactiveBorder;
+            if (iconColor.a < 0.05f) iconColor = Config::workspaceActiveBorder.a > 0.05f ? Config::workspaceActiveBorder : Config::panelBorderColor;
+            drawPlusIcon(curWorkspaceBox, iconColor);
+        }
+
         curWorkspaceRectOffsetX += workspaceBoxW + Config::workspaceMargin * owner->m_scale;
     }
 }

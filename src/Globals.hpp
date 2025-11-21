@@ -67,6 +67,12 @@ namespace Config {
     extern float focusedWindowPlaceholderAlpha;
 
     extern bool showFocusedWindowContent;
+
+    // New features
+    extern int roundedCorners;            // Corner radius for panel & workspace previews
+    extern bool showWorkspaceTitles;      // Render workspace titles / focused window class:title
+    extern bool showNewWorkspaceIcon;     // Render a plus icon on the "new" workspace placeholder
+    extern bool scrollToSwitch;           // Scroll on panel switches workspace instead of scrolling list
 }
 
 // Texture capture system

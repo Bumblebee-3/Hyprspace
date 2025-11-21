@@ -81,11 +81,27 @@ bool CHyprspaceWidget::axisEvent(double delta, Vector2D coords) {
     CBox widgetBox = {owner->m_position.x, owner->m_position.y - curYOffset->value(), owner->m_transformedSize.x, (Config::panelHeight + Config::reservedArea) * owner->m_scale};
     if (Config::onBottom) widgetBox = {owner->m_position.x, owner->m_position.y + owner->m_transformedSize.y - ((Config::panelHeight + Config::reservedArea) * owner->m_scale) + curYOffset->value(), owner->m_transformedSize.x, (Config::panelHeight + Config::reservedArea) * owner->m_scale};
 
-    // scroll through panel if cursor is on it
+    // scroll through panel if cursor is on it (unless scrollToSwitch forces switching)
     if (widgetBox.containsPoint(coords * getOwner()->m_scale)) {
-        *workspaceScrollOffset = workspaceScrollOffset->goal() - delta * 2;
+        if (Config::scrollToSwitch) {
+            // interpret scroll direction as workspace change
+            if (delta < 0) {
+                SWorkspaceIDName wsIDName = getWorkspaceIDNameFromString("r-1");
+                if (g_pCompositor->getWorkspaceByID(wsIDName.id) == nullptr)
+                    [[maybe_unused]] auto ws = g_pCompositor->createNewWorkspace(wsIDName.id, ownerID);
+                getOwner()->changeWorkspace(wsIDName.id);
+            } else {
+                SWorkspaceIDName wsIDName = getWorkspaceIDNameFromString("r+1");
+                if (g_pCompositor->getWorkspaceByID(wsIDName.id) == nullptr)
+                    [[maybe_unused]] auto ws = g_pCompositor->createNewWorkspace(wsIDName.id, ownerID);
+                getOwner()->changeWorkspace(wsIDName.id);
+            }
+            if (Config::exitOnSwitch && active) hide();
+        } else {
+            *workspaceScrollOffset = workspaceScrollOffset->goal() - delta * 2;
+        }
     }
-    // otherwise, scroll to switch active workspace
+    // otherwise, scroll to switch active workspace (default behavior preserved)
     else {
         if (delta < 0) {
             SWorkspaceIDName wsIDName = getWorkspaceIDNameFromString("r-1");
@@ -101,6 +117,7 @@ bool CHyprspaceWidget::axisEvent(double delta, Vector2D coords) {
             }
             getOwner()->changeWorkspace(wsIDName.id);
         }
+        if (Config::exitOnSwitch && active) hide();
     }
 
 
