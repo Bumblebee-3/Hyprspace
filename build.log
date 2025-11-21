@@ -1,1 +1,0 @@
-g++ -shared -fPIC --no-gnu-unique -Wall -g -DWLR_USE_UNSTABLE -std=c++2b -O2 `pkg-config --cflags pixman-1 libdrm hyprland pangocairo libinput libudev wayland-server xkbcommon` src/Input.cpp src/Layout.cpp src/Overview.cpp src/Render.cpp src/main.cpp -o Hyprspace.so
