@@ -39,10 +39,8 @@ void CHyprspaceWidget::updateLayout() {
         // Restore original active workspace safely
         if (oActiveWorkspace)
             pMonitor->m_activeWorkspace = oActiveWorkspace;
-        if (!Config::onBottom)
-            pMonitor->m_reservedTopLeft.y = currentHeight;
-        else
-            pMonitor->m_reservedBottomRight.y = currentHeight;
+        // Hyprland reserved areas are managed internally; do not set directly.
+        // We rely on workspace rules and rendering offsets (panelHeight + reservedArea).
         const auto curRules = std::to_string(pMonitor->activeWorkspaceID()) + ", gapsin:" + std::to_string(Config::gapsIn) + ", gapsout:" + std::to_string(Config::gapsOut);
         if (Config::overrideGaps) g_pConfigManager->handleWorkspaceRules("", curRules);
         g_pLayoutManager->getCurrentLayout()->recalculateMonitor(ownerID);

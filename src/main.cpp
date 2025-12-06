@@ -300,7 +300,8 @@ PHLMONITOR g_pTouchedMonitor;
 void onTouchDown(void* thisptr, SCallbackInfo& info, std::any args) {
     const auto e = std::any_cast<ITouch::SDownEvent>(args);
     auto targetMonitor = g_pCompositor->getMonitorFromName(!e.device->m_boundOutput.empty() ? e.device->m_boundOutput : "");
-    targetMonitor = targetMonitor ? targetMonitor : g_pCompositor->m_lastMonitor.lock();
+    if (!targetMonitor)
+        targetMonitor = g_pCompositor->getMonitorFromCursor();
 
     const auto widget = getWidgetForMonitor(targetMonitor);
     if (widget != nullptr && targetMonitor != nullptr) {
