@@ -1,6 +1,7 @@
 #include <hyprland/src/plugins/PluginSystem.hpp>
 #include <hyprland/src/plugins/PluginAPI.hpp>
 #include <hyprland/src/devices/IKeyboard.hpp>
+#include <iostream>
 #include "Overview.hpp"
 #include "Globals.hpp"
 
@@ -487,7 +488,7 @@ void registerMonitors() {
 APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE inHandle) {
     pHandle = inHandle;
 
-    Debug::log(LOG, "Loading overview plugin");
+    std::cout << "Loading overview plugin" << std::endl;
 
     HyprlandAPI::addConfigValue(pHandle, "plugin:overview:panelColor", Hyprlang::INT{CHyprColor(0, 0, 0, 0).getAsHex()});
     HyprlandAPI::addConfigValue(pHandle, "plugin:overview:panelBorderColor", Hyprlang::INT{CHyprColor(0, 0, 0, 0).getAsHex()});

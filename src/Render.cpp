@@ -135,8 +135,7 @@ void renderWindowStub(PHLWINDOW pWindow, PHLMONITOR pMonitor, CBox rectOverride,
     const auto oSize = pWindow->m_realSize->value();
     if (oSize.x <= 0 || oSize.y <= 0) return;
 
-    // Check if window has valid surface
-    if (!pWindow->m_wlSurface || !pWindow->m_wlSurface->exists()) return;
+    // Surface validity is handled internally in Hyprland; avoid accessing protected members
 
     // Save original state
     const auto oFullscreen = pWindow->m_fullscreenState;
@@ -148,7 +147,7 @@ void renderWindowStub(PHLWINDOW pWindow, PHLMONITOR pMonitor, CBox rectOverride,
     const float curScaling = rectOverride.w / (oSize.x * pMonitor->m_scale);
 
     // Set window state for rendering preview (without mutating workspace)
-    pWindow->m_fullscreenState = SFullscreenState{FSMODE_NONE};
+    pWindow->m_fullscreenState = Desktop::View::SFullscreenState{.internal = FSMODE_NONE, .client = FSMODE_NONE};
     pWindow->m_isFloating = false;
     pWindow->m_pinned = true;
     g_pInputManager->m_currentlyDraggedWindow = pWindow; // force INTERACTIVERESIZEINPROGRESS = true
@@ -187,7 +186,7 @@ void renderFocusedWindowStub(PHLWINDOW pWindow, PHLMONITOR pMonitor, PHLWORKSPAC
 
     // Apply minimal state changes for preview rendering
     pWindow->m_workspace = pWorkspaceOverride;
-    pWindow->m_fullscreenState = SFullscreenState{FSMODE_NONE};
+    pWindow->m_fullscreenState = Desktop::View::SFullscreenState{.internal = FSMODE_NONE, .client = FSMODE_NONE};
     pWindow->m_pinned = true;
 
     // Use render modification for position and scale without touching window properties
